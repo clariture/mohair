@@ -60,6 +60,11 @@ var query = userTable.insert({name: 'alice', created_at: mohair.raw('NOW()')});
 
 query.sql();        // => 'INSERT INTO user(name, created_at) VALUES (?, NOW())'
 query.params();     // => ['alice']
+
+query = userTable.insert({name: 'alice', membership_ids: mohair.raw('array_cat(membership_ids, ARRAY[?])', [2,4,6])});
+
+query.sql();        // => 'INSERT INTO user(name, membership_ids) VALUES (?, array_cat(membership_ids, ARRAY[?, ?, ?]))'
+query.params();     // => ['alice', 2, 4, 6]
 ```
 
 ##### insert multiple records

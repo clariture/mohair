@@ -64,6 +64,16 @@ module.exports =
 
             test.done()
 
+        'with raw with array params': (test) ->
+            q = mohair.table('user').insert
+                name: 'alice',
+                membership_ids: mohair.raw('array_cat(membership_ids, ARRAY[?])', [2,4,6])
+
+            test.equal q.sql(), 'INSERT INTO user(name, membership_ids) VALUES (?, array_cat(membership_ids, ARRAY[?, ?, ?]))'
+            test.deepEqual q.params(), ['alice', 2, 4, 6]
+
+            test.done()
+
     'insertMany':
 
         'records with same key order': (test) ->
@@ -221,6 +231,21 @@ module.exports =
 
             test.equal q.sql(), 'UPDATE user SET name = ?, user_id = LOG(user_id, ?), modified_at = NOW() WHERE (id = ?) AND (x = ?)'
             test.deepEqual q.params(), ['foo', 4, 3, 5]
+
+            test.done()
+
+        'with raw with array params': (test) ->
+            q = mohair.table('user')
+                .where(id: 3, x: 5)
+                .update {
+                    name: 'foo',
+                    user_id: mohair.raw('LOG(user_id, ?)', 4),
+                    modified_at: mohair.raw('NOW()'),
+                    membership_ids: mohair.raw('array_cat(membership_ids, ARRAY[?])', [2,4,6])
+                }
+
+            test.equal q.sql(), 'UPDATE user SET name = ?, user_id = LOG(user_id, ?), modified_at = NOW(), membership_ids = array_cat(membership_ids, ARRAY[?, ?, ?]) WHERE (id = ?) AND (x = ?)'
+            test.deepEqual q.params(), ['foo', 4, 2, 4, 6, 3, 5]
 
             test.done()
 
