@@ -3,8 +3,24 @@ criterion = require 'criterion'
 actions = require './actions'
 
 rawPrototype =
-    sql: -> @_sql
-    params: -> @_params
+    sql: ->
+        return @_sql unless @_params
+
+        i = -1
+        params = @_params
+
+        @_sql.replace /\?/g, ->
+            i++
+            if Array.isArray params[i]
+                (params[i].map -> "?").join ", "
+            else
+                "?"
+
+    params: ->
+        if @_params
+            params = []
+            @_params.forEach (c) -> params = params.concat c
+            params
 
 module.exports =
     raw: (sql, params...) ->
