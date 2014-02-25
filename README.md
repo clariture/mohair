@@ -8,10 +8,48 @@ mohair is a simple and flexible sql builder with a fluent interface.
 methods to execute queries, to declare and include associations (`hasOne`, `belongsTo`, `hasMany`, `hasAndBelongsToMany`) and more:
 [go check it out.](https://github.com/snd/mesa)
 
+- [install](#install)
+- [use](#use)
+    - [require](#require)
+    - [specify a table to use](#specify-a-table-to-use)
+    - [insert a record](#insert-a-record)
+    - [insert with some raw sql](#insert-with-some-raw-sql)
+    - [insert multiple records](#insert-multiple-records)
+    - [delete](#delete)
+    - [update](#update)
+    - [update with some raw sql](#update-with-some-raw-sql)
+    - [select](#select)
+    - [select with subquery](#select-with-subquery)
+    - [select without a table](#select-without-a-table)
+    - [select with criteria](#select-with-criteria)
+    - [order](#order)
+    - [limit and offset](#limit-and-offset)
+    - [join](#join)
+    - [join with criteria](#join-with-criteria)
+    - [group](#group)
+    - [mixins](#mixins)
+    - [extending](#extending)
+    - [common table expressions](#common-table-expressions)
+- [license: MIT](#license-mit)
+
 ### install
 
 ```
 npm install mohair
+```
+
+**or**
+
+put this line in the dependencies section of your `package.json`:
+
+```
+"mohair": "0.12.0"
+```
+
+then run:
+
+```
+npm install
 ```
 
 ### use
@@ -236,17 +274,37 @@ query.params();     // => []
 ##### mixins
 
 ```javascript
-var mostRecentlyUpdated = function() {
-    return this.order("updated_at DESC").limit(1);
+var paginate = function(page, perPage) {
+    return this
+        .limit(perPage)
+        .offset(page * perPage);
 };
 
-var q1 = mohair.table('posts').mixin(mostRecentlyUpdated);
-var q2 = mohair.table('comments').mixin(mostRecentlyUpdated);
+var query = mohair.table('posts')
+    .mixin(paginate, 10, 100)
+    .where(is_public: true);
 
-q1.sql();           // => 'SELECT * FROM posts ORDER BY updated_at DESC LIMIT ?'
-q1.params();        // => [1]
-q2.sql();           // => 'SELECT * FROM comments ORDER BY updated_at DESC LIMIT ?'
-q2.params();        // => [1]
+query.sql();       // => 'SELECT * FROM posts WHERE is_public = ? LIMIT ? OFFSET ?'
+query.params();    // => [true, 100, 1000]
+```
+
+##### extending
+
+```javascript
+var posts = mohair.table('posts');
+
+posts.paginate = function(page, perPage) {
+    return this
+        .limit(perPage)
+        .offset(page * perPage);
+};
+
+var query = mohair.table('posts')
+    .where(is_public: true)
+    .paginate(10, 100);
+
+query.sql();       // => 'SELECT * FROM posts WHERE is_public = ? LIMIT ? OFFSET ?'
+query.params();    // => [true, 100, 1000]
 ```
 
 ##### common table expressions
