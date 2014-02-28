@@ -29,7 +29,7 @@
         "node": ">=0.8.5"
     },
     "dependencies": {
-        "criterion": "0.3.2"
+        "criterion": "clariture/criterion#latest"
     },
     "devDependencies": {
         "coffee-script": "1.7.1",
