@@ -26,6 +26,7 @@ methods to execute queries, to declare and include associations (`hasOne`, `belo
     - [limit and offset](#limit-and-offset)
     - [join](#join)
     - [join with criteria](#join-with-criteria)
+    - [distinct](#distinct)
     - [group](#group)
     - [mixins](#mixins)
     - [extending](#extending)
@@ -251,6 +252,15 @@ query.params();     // => []
 var query = userTable.join('JOIN project ON user.id = project.user_id', {'project.column': {$null: true}});
 
 query.sql();        // => 'SELECT * FROM user JOIN project ON user.id = project.user_id AND (project.column IS NULL)'
+query.params();     // => []
+```
+
+##### distinct
+
+```javascript
+var query = userTable.distinct().join('JOIN project ON user.id = project.user_id');
+
+query.sql();        // => 'SELECT DISTINCT * FROM user JOIN project ON user.id = project.user_id'
 query.params();     // => []
 ```
 

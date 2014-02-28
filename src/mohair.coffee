@@ -83,6 +83,8 @@ module.exports =
         @fluent '_limit', parseInt(arg, 10)
     offset: (arg) ->
         @fluent '_offset', parseInt(arg, 10)
+    distinct: () ->
+        @fluent '_distinct', true
 
     table: (table) ->
         @fluent '_table', table

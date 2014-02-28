@@ -354,6 +354,16 @@ module.exports =
 
             test.done()
 
+        'distinct': (test) ->
+            q = mohair.table('user')
+                .distinct()
+                .join('JOIN project ON user.id = project.user_id')
+
+            test.equal q.sql(), 'SELECT DISTINCT * FROM user JOIN project ON user.id = project.user_id'
+            test.deepEqual q.params(), []
+
+            test.done()
+
         'join': (test) ->
             q = mohair.table('user')
                 .join('JOIN project ON user.id = project.user_id')
