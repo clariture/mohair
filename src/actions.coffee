@@ -95,6 +95,7 @@ select =
             sql += ' '
 
         sql += "SELECT "
+        sql += "DISTINCT " if mohair._distinct?
         parts = []
         that._selects.forEach (s) ->
             if isRaw s
