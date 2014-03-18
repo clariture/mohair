@@ -338,6 +338,14 @@ module.exports =
 
             test.done()
 
+        'order with raw sql': (test) ->
+            q = mohair.table('user').order('prefs->>?', 'contactMethod')
+
+            test.equal q.sql(), "SELECT * FROM user ORDER BY prefs->>?"
+            test.deepEqual q.params(), ['contactMethod']
+
+            test.done()
+
         'limit': (test) ->
             q = mohair.table('user').limit(10)
 
