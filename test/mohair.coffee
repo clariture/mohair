@@ -338,11 +338,11 @@ module.exports =
 
             test.done()
 
-        'order with raw sql': (test) ->
-            q = mohair.table('user').order('prefs->>?', 'contactMethod')
+        'order with raw sql and parameters': (test) ->
+            q = mohair.table('user').order('prefs->>?, prefs->>?', 'contactMethod', 'contactTime')
 
-            test.equal q.sql(), "SELECT * FROM user ORDER BY prefs->>?"
-            test.deepEqual q.params(), ['contactMethod']
+            test.equal q.sql(), "SELECT * FROM user ORDER BY prefs->>?, prefs->>?"
+            test.deepEqual q.params(), ['contactMethod', 'contactTime']
 
             test.done()
 
