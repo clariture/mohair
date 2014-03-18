@@ -121,7 +121,7 @@ select =
         sql += " WHERE #{mohair._where.sql()}" if mohair._where?
         sql += " GROUP BY #{mohair._group}" if mohair._group?
         sql += " HAVING #{mohair._having.sql()}" if mohair._having?
-        sql += " ORDER BY #{mohair._order}" if mohair._order?
+        sql += " ORDER BY #{mohair._order.sql()}" if mohair._order?
         sql += " LIMIT ?" if mohair._limit?
         sql += " OFFSET ?" if mohair._offset?
         sql
@@ -148,6 +148,7 @@ select =
                 params = params.concat join.criterion.params()
 
         params = params.concat mohair._where.params() if mohair._where?
+        params = params.concat mohair._order.params() if mohair._order?
         params.push mohair._limit if mohair._limit?
         params.push mohair._offset if mohair._offset?
         params

@@ -93,8 +93,9 @@ module.exports =
         @fluent '_with', arg
     group: (arg) ->
         @fluent '_group', arg
-    order: (arg) ->
-        @fluent '_order', arg
+    order: (sql, params...) ->
+        order = @raw sql, params...
+        @fluent '_order', order
     limit: (arg) ->
         @fluent '_limit', parseInt(arg, 10)
     offset: (arg) ->
