@@ -148,6 +148,7 @@ select =
                 params = params.concat join.criterion.params()
 
         params = params.concat mohair._where.params() if mohair._where?
+        params = params.concat mohair._having.params() if mohair._having?
         params = params.concat mohair._order.params() if mohair._order?
         params.push mohair._limit if mohair._limit?
         params.push mohair._offset if mohair._offset?
