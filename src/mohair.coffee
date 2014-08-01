@@ -120,8 +120,9 @@ module.exports =
             throw new Error 'mixin must be called with a function that returns a value'
         m
 
-    from: (arg) ->
-        @fluent '_from', arg
+    from: (sql, params...) ->
+        from = @raw sql, params...
+        @fluent '_from', from
 
     sql: ->
         @_action.sql @
