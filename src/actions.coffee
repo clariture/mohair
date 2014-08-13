@@ -178,13 +178,29 @@ update =
                 "#{escapedKey} = #{that._updates[key].sql()}"
             else
                 "#{escapedKey} = ?"
-        sql = "UPDATE #{table} SET #{updates.join ', '}"
+
+        sql = ''
+
+        if mohair._with?
+            sql += 'WITH '
+            parts = []
+            parts = Object.keys(mohair._with).map (key) ->
+                key + ' AS (' + asRaw(mohair._with[key]).sql() + ')'
+            sql += parts.join(', ')
+            sql += ' '
+
+        sql += "UPDATE #{table} SET #{updates.join ', '}"
         sql += " FROM #{mohair._from.sql()}" if mohair._from?
         sql += " WHERE #{mohair._where.sql()}" if mohair._where?
         sql
     params: (mohair) ->
         that = this
         params = []
+
+        if mohair._with?
+            Object.keys(mohair._with).forEach (key) ->
+                params = params.concat asRaw(mohair._with[key]).params()
+
         Object.keys(that._updates).forEach (key) ->
             if isRaw that._updates[key]
                 params = params.concat that._updates[key].params()

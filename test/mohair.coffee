@@ -221,6 +221,27 @@ module.exports =
 
             test.done()
 
+        'with common table expression': (test) ->
+            purchasesByUser = mohair
+                .select('user_id, SUM(amount) AS amount')
+                .table('orders')
+                .group('user_id')
+
+            q = mohair
+                .with(
+                    purch: purchasesByUser
+                )
+                .table('user')
+                .from('purch AS p')
+                .where(id: 3, x: 5)
+                .where('p.user_id = user.id')
+                .update {total_purchases: mohair.raw('p.amount')}
+
+            test.equal q.sql(), 'WITH purch AS (SELECT user_id, SUM(amount) AS amount FROM orders GROUP BY user_id) UPDATE user SET total_purchases = p.amount FROM purch AS p WHERE ((id = ?) AND (x = ?)) AND (p.user_id = user.id)'
+            test.deepEqual q.params(), [3, 5]
+
+            test.done()
+
         'with raw without params': (test) ->
             q = mohair.table('user')
                 .where(id: 3, x: 5)
