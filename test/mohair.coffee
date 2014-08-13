@@ -187,6 +187,27 @@ module.exports =
 
             test.done()
 
+        'with common table expressions': (test) ->
+            purchasesByUser = mohair
+                .select('user_id, SUM(amount) AS amount')
+                .table('orders')
+                .group('user_id')
+                .having('amount < 1000')
+
+            q = mohair
+                .with(
+                    purch: purchasesByUser
+                )
+                .table('user')
+                .delete()
+                .where('id IN (SELECT id FROM purch)')
+                .where('x BETWEEN ? AND ?', 50, 55)
+
+            test.equal q.sql(), 'WITH purch AS (SELECT user_id, SUM(amount) AS amount FROM orders GROUP BY user_id HAVING amount < 1000) DELETE FROM user WHERE (id IN (SELECT id FROM purch)) AND (x BETWEEN ? AND ?)'
+            test.deepEqual q.params(), [50, 55]
+
+            test.done()
+
     'update':
 
         'without criteria': (test) ->
