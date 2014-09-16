@@ -34,6 +34,18 @@ module.exports =
 
             test.done()
 
+        'update empty object': (test) ->
+            q = mohair.table('user').update {}
+            test.throws -> q.sql()
+
+            test.done()
+
+        'update undefined': (test) ->
+            test.throws ->
+                mohair.table('user').update()
+
+            test.done()
+
     'insert':
         'simple': (test) ->
             q = mohair.table('user').insert {name: 'foo', user_id: 5}
@@ -346,6 +358,22 @@ module.exports =
 
             test.equal q.sql(), 'UPDATE user SET name = ?, user_id = ?'
             test.deepEqual q.params(), ['foo', null]
+
+            test.done()
+
+        'with null values and attributes': (test) ->
+            q = mohair.table('user').attributes(['name']).update {name: 'foo', user_id: null}
+
+            test.equal q.sql(), 'UPDATE user SET name = ?'
+            test.deepEqual q.params(), ['foo']
+
+            test.done()
+
+        'with empty object and attributes': (test) ->
+            q = mohair.table('user').attributes(['name']).update {}
+
+            test.equal q.sql(), 'UPDATE user SET name = ?'
+            test.deepEqual q.params(), [undefined]
 
             test.done()
 

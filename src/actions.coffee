@@ -42,7 +42,7 @@ insertPrototype =
             sql += "INSERT INTO #{table}(#{escapedKeys.join ', '}) "
 
             sql += that._data.sql()
-        else if that._data?
+        else
             keys = mohair._attributes || Object.keys(that._data[0])
             unless keys?
                 throw new Error 'sql of insert requires call to attributes before it'
@@ -71,7 +71,7 @@ insertPrototype =
 
         if isRaw that._data
             params = params.concat that._data.params()
-        else if that._data?
+        else
             keys = mohair._attributes || Object.keys(that._data[0])
             unless keys?
                 throw new Error 'sql of insert requires call to attributes before it'
@@ -84,6 +84,7 @@ insertPrototype =
                         params = params.concat d[k].params()
                     else
                         params.push d[k]
+
         params
 
 module.exports.insert = (data) ->
@@ -92,12 +93,12 @@ module.exports.insert = (data) ->
     else if data?
         processedData = if Array.isArray(data) then data else [data]
         if processedData.length is 0
-            throw new Error 'data argument is empty - no records to insert'
+            throw new Error 'insert data argument is empty - no records to insert'
         processedData.forEach (d) ->
             unless 'object' is typeof d
-                throw new Error 'data argument must be an object'
+                throw new Error 'insert data argument must be an object'
     else
-        throw new Error 'data argument must be supplied'
+        throw new Error 'insert data argument must be supplied'
 
     object = Object.create insertPrototype
     object._data = processedData
@@ -185,7 +186,7 @@ module.exports.select = ->
     object._selects = selects
     object
 
-update =
+updatePrototype =
     sql: (mohair) ->
         that = this
 
@@ -193,15 +194,6 @@ update =
             throw new Error 'sql of update requires call to table before it'
 
         table = mohair._escape mohair._table
-        keys = Object.keys that._updates
-
-        updates = keys.map (key) ->
-            escapedKey = mohair._escape key
-            if isRaw that._updates[key]
-                "#{escapedKey} = #{that._updates[key].sql()}"
-            else
-                "#{escapedKey} = ?"
-
         sql = ''
 
         if mohair._with?
@@ -211,6 +203,19 @@ update =
                 key + ' AS (' + asRaw(mohair._with[key]).sql() + ')'
             sql += parts.join(', ')
             sql += ' '
+
+        keys = mohair._attributes || Object.keys(that._data)
+        unless keys?
+            throw new Error 'sql of update requires call to attributes before it'
+        if keys.length is 0
+            throw new Error 'sql of update requires one or more attributes'
+
+        updates = keys.map (key) ->
+            escapedKey = mohair._escape key
+            if isRaw that._data[key]
+                "#{escapedKey} = #{that._data[key].sql()}"
+            else
+                "#{escapedKey} = ?"
 
         sql += "UPDATE #{table} SET #{updates.join ', '}"
         sql += " FROM #{mohair._from.sql()}" if mohair._from?
@@ -224,18 +229,32 @@ update =
             Object.keys(mohair._with).forEach (key) ->
                 params = params.concat asRaw(mohair._with[key]).params()
 
-        Object.keys(that._updates).forEach (key) ->
-            if isRaw that._updates[key]
-                params = params.concat that._updates[key].params()
+        keys = mohair._attributes || Object.keys(that._data)
+        unless keys?
+            throw new Error 'sql of update requires call to attributes before it'
+        if keys.length is 0
+            throw new Error 'sql of update requires one or more attributes'
+
+        keys.forEach (k) ->
+            if isRaw that._data[k]
+                params = params.concat that._data[k].params()
             else
-                params.push that._updates[key]
+                params.push that._data[k]
+
         params = params.concat mohair._from.params() if mohair._from?
         params = params.concat mohair._where.params() if mohair._where?
+
         params
 
-module.exports.update = (updates) ->
-    object = Object.create update
-    object._updates = updates
+module.exports.update = (data) ->
+    if data?
+        unless 'object' is typeof data
+            throw new Error 'update data argument must be an object'
+    else
+        throw new Error 'update data argument must be supplied'
+
+    object = Object.create updatePrototype
+    object._data = data
     object
 
 deletePrototype =
