@@ -10,18 +10,27 @@ module.exports =
 
             test.done()
 
-        'create multiple records without matching keys': (test) ->
-            test.throws ->
-                mohair.table('user').insertMany [
-                    {name: 'foo', email: 'foo@example.com'}
-                    {name: 'bar'}
-                ]
+        'insert array with empty object': (test) ->
+            q = mohair.table('user').insert [ {} ]
+            test.throws -> q.sql()
 
+            test.done()
+
+        'insert empty object': (test) ->
+            q = mohair.table('user').insert {}
+            test.throws -> q.sql()
+
+            test.done()
+
+        'insert empty array': (test) ->
             test.throws ->
-                mohair.table('user').insertMany [
-                    {name: 'foo', email: 'foo@example.com'}
-                    {name: 'bar', id: 9}
-                ]
+                mohair.table('user').insert []
+
+            test.done()
+
+        'insert undefined': (test) ->
+            test.throws ->
+                mohair.table('user').insert()
 
             test.done()
 
@@ -64,7 +73,21 @@ module.exports =
 
             test.done()
 
-        'records with attributes list and without matching keys': (test) ->
+        'records without matching keys': (test) ->
+            q = mohair.table('user').insert [
+                {name: 'foo', email: 'foo@example.com', age: 16}
+                {email: 'bar@example.com', name: 'bar'}
+                {age: 30, name: 'baz'}
+            ]
+
+            test.equal q.sql(),
+                'INSERT INTO user(name, email, age) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)'
+            test.deepEqual q.params(),
+                ['foo', 'foo@example.com', 16, 'bar', 'bar@example.com', undefined, 'baz', undefined, 30]
+
+            test.done()
+
+        'records without matching keys and with attributes list': (test) ->
             q = mohair.table('user').attributes(['name', 'email']).insert [
                 {name: 'foo', email: 'foo@example.com', age: 16}
                 {email: 'bar@example.com', name: 'bar'}
@@ -78,10 +101,8 @@ module.exports =
 
             test.done()
 
-    'insertMany':
-
         'records with same key order': (test) ->
-            q = mohair.table('user').insertMany [
+            q = mohair.table('user').insert [
                 {name: 'foo', email: 'foo@example.com'}
                 {name: 'bar', email: 'bar@example.com'}
                 {name: 'baz', email: 'baz@example.com'}
@@ -95,7 +116,7 @@ module.exports =
             test.done()
 
         'records with different key order': (test) ->
-            q = mohair.table('user').insertMany [
+            q = mohair.table('user').insert [
                 {name: 'foo', email: 'foo@example.com', age: 16}
                 {email: 'bar@example.com', name: 'bar', age: 25}
                 {age: 30, name: 'baz', email: 'baz@example.com'}
@@ -109,7 +130,7 @@ module.exports =
             test.done()
 
         'records with null values': (test) ->
-            q = mohair.table('user').insertMany [
+            q = mohair.table('user').insert [
                 {name: 'foo', email: 'foo@example.com', age: null}
                 {email: 'bar@example.com', name: null, age: 25}
                 {age: 30, name: 'baz', email: null}
@@ -123,7 +144,7 @@ module.exports =
             test.done()
 
         'with raw without params': (test) ->
-            q = mohair.table('user').insertMany [
+            q = mohair.table('user').insert [
                 {
                     name: 'foo',
                     user_id: 5
@@ -147,7 +168,7 @@ module.exports =
             test.done()
 
         'with raw with params': (test) ->
-            q = mohair.table('user').insertMany [
+            q = mohair.table('user').insert [
                 {
                     name: 'foo',
                     user_id: 5
