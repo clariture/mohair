@@ -39,30 +39,7 @@ module.exports =
     _joins: []
 
     insert: (data) ->
-        unless 'object' is typeof data
-            throw new Error 'data argument must be an object'
-
         @fluent '_action', actions.insert data
-
-    insertMany: (array) ->
-        unless Array.isArray array
-            throw new Error 'array argument must be an array'
-
-        throw new Error 'array argument is empty - no records to insert' if array.length is 0
-
-        msg = 'all records in the argument array must have the same keys.'
-        keysOfFirstRecord = Object.keys array[0]
-        array.forEach (data) ->
-            keys = Object.keys data
-
-            throw new Error msg if keys.length isnt keysOfFirstRecord.length
-
-            keysOfFirstRecord.forEach (key) ->
-                value = data[key]
-                if not value? and data[key] isnt null
-                    throw new Error msg
-
-        @fluent '_action', actions.insert array
 
     escape: (arg) ->
         @fluent '_escape', arg

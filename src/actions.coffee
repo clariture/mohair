@@ -13,7 +13,7 @@ asRaw = (x) ->
         params: -> []
     }
 
-insert =
+insertPrototype =
     sql: (mohair) ->
         that = this
 
@@ -35,20 +35,24 @@ insert =
             keys = mohair._attributes
             unless keys?
                 throw new Error 'sql of insert requires call to attributes before it'
+            if keys.length is 0
+                throw new Error 'sql of insert requires one or more attributes'
 
             escapedKeys = keys.map (key) -> mohair._escape key
             sql += "INSERT INTO #{table}(#{escapedKeys.join ', '}) "
 
             sql += that._data.sql()
-        else
-            data = if Array.isArray(that._data) then that._data else [that._data]
-
-            keys = mohair._attributes || Object.keys(data[0])
+        else if that._data?
+            keys = mohair._attributes || Object.keys(that._data[0])
+            unless keys?
+                throw new Error 'sql of insert requires call to attributes before it'
+            if keys.length is 0
+                throw new Error 'sql of insert requires one or more attributes'
 
             escapedKeys = keys.map (key) -> mohair._escape key
             sql += "INSERT INTO #{table}(#{escapedKeys.join ', '}) "
 
-            rows = data.map (d) ->
+            rows = that._data.map (d) ->
                 row = keys.map (k) ->
                     if isRaw d[k]
                         d[k].sql()
@@ -56,6 +60,7 @@ insert =
                         '?'
                 "(#{row.join ', '})"
             sql += "VALUES #{rows.join ', '}"
+
     params: (mohair) ->
         that = this
         params = []
@@ -66,12 +71,14 @@ insert =
 
         if isRaw that._data
             params = params.concat that._data.params()
-        else
-            data = if Array.isArray(that._data) then that._data else [that._data]
+        else if that._data?
+            keys = mohair._attributes || Object.keys(that._data[0])
+            unless keys?
+                throw new Error 'sql of insert requires call to attributes before it'
+            if keys.length is 0
+                throw new Error 'sql of insert requires one or more attributes'
 
-            keys = mohair._attributes || Object.keys(data[0])
-
-            data.forEach (d) ->
+            that._data.forEach (d) ->
                 keys.forEach (k) ->
                     if isRaw d[k]
                         params = params.concat d[k].params()
@@ -80,8 +87,20 @@ insert =
         params
 
 module.exports.insert = (data) ->
-    object = Object.create insert
-    object._data = data
+    if isRaw data
+        processedData = data
+    else if data?
+        processedData = if Array.isArray(data) then data else [data]
+        if processedData.length is 0
+            throw new Error 'data argument is empty - no records to insert'
+        processedData.forEach (d) ->
+            unless 'object' is typeof d
+                throw new Error 'data argument must be an object'
+    else
+        throw new Error 'data argument must be supplied'
+
+    object = Object.create insertPrototype
+    object._data = processedData
     object
 
 select =
