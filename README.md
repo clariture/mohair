@@ -103,13 +103,11 @@ query.params();     // => ['alice']
 ##### insert multiple records
 
 ```javascript
-var query = userTable.insertMany([{name: 'alice'}, {name: 'bob'}]);
+var query = userTable.insert([{name: 'alice'}, {name: 'bob'}]);
 
 query.sql();        // => 'INSERT INTO user(name) VALUES (?), (?)'
 query.params();     // => ['alice', 'bob']
 ```
-
-all records in the argument array must have the same properties.
 
 ##### insert using select and common table expressions
 
