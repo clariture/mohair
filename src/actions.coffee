@@ -21,63 +21,67 @@ insert =
             throw new Error 'sql of insert requires call to table before it'
 
         table = mohair._escape mohair._table
-        keys = Object.keys(that._data)
-        escapedKeys = keys.map (key) -> mohair._escape key
-        row = keys.map (key) ->
-            if isRaw that._data[key]
-                that._data[key].sql()
-            else
-                '?'
-        "INSERT INTO #{table}(#{escapedKeys.join ', '}) VALUES (#{row.join ', '})"
-    params: ->
+        sql = ''
+
+        if mohair._with?
+            sql += 'WITH '
+            parts = []
+            parts = Object.keys(mohair._with).map (key) ->
+                key + ' AS (' + asRaw(mohair._with[key]).sql() + ')'
+            sql += parts.join(', ')
+            sql += ' '
+
+        if isRaw that._data
+            keys = mohair._attributes
+            unless keys?
+                throw new Error 'sql of insert requires call to attributes before it'
+
+            escapedKeys = keys.map (key) -> mohair._escape key
+            sql += "INSERT INTO #{table}(#{escapedKeys.join ', '}) "
+
+            sql += that._data.sql()
+        else
+            data = if Array.isArray(that._data) then that._data else [that._data]
+
+            keys = mohair._attributes || Object.keys(data[0])
+
+            escapedKeys = keys.map (key) -> mohair._escape key
+            sql += "INSERT INTO #{table}(#{escapedKeys.join ', '}) "
+
+            rows = data.map (d) ->
+                row = keys.map (k) ->
+                    if isRaw d[k]
+                        d[k].sql()
+                    else
+                        '?'
+                "(#{row.join ', '})"
+            sql += "VALUES #{rows.join ', '}"
+    params: (mohair) ->
         that = this
         params = []
-        Object.keys(that._data).map (key) ->
-            if isRaw that._data[key]
-                params = params.concat that._data[key].params()
-            else
-                params.push that._data[key]
+
+        if mohair._with?
+            Object.keys(mohair._with).forEach (key) ->
+                params = params.concat asRaw(mohair._with[key]).params()
+
+        if isRaw that._data
+            params = params.concat that._data.params()
+        else
+            data = if Array.isArray(that._data) then that._data else [that._data]
+
+            keys = mohair._attributes || Object.keys(data[0])
+
+            data.forEach (d) ->
+                keys.forEach (k) ->
+                    if isRaw d[k]
+                        params = params.concat d[k].params()
+                    else
+                        params.push d[k]
         params
 
 module.exports.insert = (data) ->
     object = Object.create insert
     object._data = data
-    object
-
-insertMany =
-    sql: (mohair) ->
-        that = this
-
-        unless mohair._table?
-            throw new Error 'sql of insertMany requires call to table before it'
-
-        table = mohair._escape mohair._table
-        first = that._array[0]
-        keys = Object.keys(first)
-        escapedKeys = keys.map (key) -> mohair._escape key
-        rows = that._array.map (data) ->
-            row = keys.map (key) ->
-                if isRaw data[key]
-                    data[key].sql()
-                else
-                    '?'
-            "(#{row.join ', '})"
-        "INSERT INTO #{table}(#{escapedKeys.join ', '}) VALUES #{rows.join ', '}"
-    params: (mohair) ->
-        that = this
-        firstKeys = Object.keys that._array[0]
-        params = []
-        that._array.forEach (data) ->
-            firstKeys.forEach (key) ->
-                if isRaw data[key]
-                    params = params.concat data[key].params()
-                else
-                    params.push data[key]
-        params
-
-module.exports.insertMany = (array) ->
-    object = Object.create insertMany
-    object._array = array
     object
 
 select =

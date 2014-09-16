@@ -46,7 +46,7 @@ module.exports =
                 if not value? and data[key] isnt null
                     throw new Error msg
 
-        @fluent '_action', actions.insertMany array
+        @fluent '_action', actions.insert array
 
     escape: (arg) ->
         @fluent '_escape', arg
@@ -86,6 +86,8 @@ module.exports =
 
     table: (table) ->
         @fluent '_table', table
+    attributes: (attributes) ->
+        @fluent '_attributes', attributes
 
     where: (args...) ->
         where = criterion args...
