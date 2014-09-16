@@ -117,6 +117,66 @@ query.params();     // => ['alice', 'bob']
 
 all records in the argument array must have the same properties.
 
+##### insert using select and common table expressions
+
+```javascript
+var regionalSales = mohair
+    .select('region, SUM(amount) AS total_sales')
+    .table('orders')
+    .group('region');
+
+var topRegions = mohair
+    .select('region')
+    .table('regional_sales')
+    .where('total_sales > (SELECT SUM(total_sales/10 FROM regional_sales))');
+
+var ordersByRegion = mohair
+    .select("""
+        region,
+        product,
+        SUM(quantity) AS product_units,
+        SUM(amount) AS product_sales
+    """)
+    .table('orders')
+    .where('region IN (SELECT region FROM top_regions)')
+    .group('region, product');
+
+var query = mohair
+    .with(
+        regional_sales: regionalSales,
+        top_regions: topRegions
+    )
+    .attributes(['region_name', 'product_name', 'product_units', 'product_sales'])
+    .table('order_stats')
+    .insert(ordersByRegion);
+
+query.sql();
+```
+
+returns
+
+```sql
+WITH
+regional_sales AS (
+    SELECT region, SUM(amount) AS total_sales
+    FROM orders
+    GROUP BY region
+ ), top_regions AS (
+    SELECT region
+    FROM regional_sales
+    WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)
+ )
+INSERT INTO order_stats(region_name, product_name, product_units, product_sales)
+SELECT
+    region,
+    product,
+    SUM(quantity) AS product_units,
+    SUM(amount) AS product_sales
+FROM orders
+WHERE region IN (SELECT region FROM top_regions)
+GROUP BY region, product;
+```
+
 ##### delete
 
 ```javascript
@@ -334,7 +394,7 @@ var topRegions = mohair
 
 var query = mohair
     .with(
-        regional_sales: regionalSales
+        regional_sales: regionalSales,
         top_regions: topRegions
     )
     .select("""
@@ -346,9 +406,7 @@ var query = mohair
     .table('orders')
     .where('region IN (SELECT region FROM top_regions)')
     .group('region, product');
-```
 
-```javascript
 query.sql();
 ```
 

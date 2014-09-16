@@ -74,6 +74,20 @@ module.exports =
 
             test.done()
 
+        'records with attributes list and without matching keys': (test) ->
+            q = mohair.table('user').attributes(['name', 'email']).insert [
+                {name: 'foo', email: 'foo@example.com', age: 16}
+                {email: 'bar@example.com', name: 'bar'}
+                {age: 30, name: 'baz'}
+            ]
+
+            test.equal q.sql(),
+                'INSERT INTO user(name, email) VALUES (?, ?), (?, ?), (?, ?)'
+            test.deepEqual q.params(),
+                ['foo', 'foo@example.com', 'bar', 'bar@example.com', 'baz', undefined]
+
+            test.done()
+
     'insertMany':
 
         'records with same key order': (test) ->
@@ -615,7 +629,7 @@ module.exports =
             test.done()
 
     'common table expressions':
-        example: (test) ->
+        'example': (test) ->
             regionalSales = mohair
                 .select('region, SUM(amount) AS total_sales')
                 .table('orders')
@@ -643,7 +657,7 @@ module.exports =
 
             test.done()
 
-        params: (test) ->
+        'params': (test) ->
             regionalSales =
                 sql: -> 'regional_sales'
                 params: -> [1, 2, 3]
@@ -664,5 +678,38 @@ module.exports =
 
             test.equals query.sql(), expected
             test.deepEqual query.params(), [1, 2, 3, 4, 5, 6, 'test']
+
+            test.done()
+
+        'insert from common table expression': (test) ->
+            regionalSales = mohair
+                .select('region, SUM(amount) AS total_sales')
+                .table('orders')
+                .group('region')
+
+            topRegions = mohair
+                .select('region')
+                .table('regional_sales')
+                .where('total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)')
+
+            ordersByRegion = mohair
+                .select("region, product, SUM(quantity) AS product_units, SUM(amount) AS product_sales")
+                .table('orders')
+                .where('region IN (SELECT region FROM top_regions)')
+                .group('region, product')
+
+            query = mohair
+                .with(
+                    regional_sales: regionalSales
+                    top_regions: topRegions
+                )
+                .attributes(['region_name', 'product_name', 'product_units', 'product_sales'])
+                .table('order_stats')
+                .insert(ordersByRegion)
+
+            expected = "WITH regional_sales AS (SELECT region, SUM(amount) AS total_sales FROM orders GROUP BY region), top_regions AS (SELECT region FROM regional_sales WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)) INSERT INTO order_stats(region_name, product_name, product_units, product_sales) SELECT region, product, SUM(quantity) AS product_units, SUM(amount) AS product_sales FROM orders WHERE region IN (SELECT region FROM top_regions) GROUP BY region, product"
+
+            test.equals query.sql(), expected
+            test.deepEqual query.params(), []
 
             test.done()
