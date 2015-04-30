@@ -354,6 +354,16 @@ module.exports =
 
             test.done()
 
+        'from': (test) ->
+            q = mohair.table('user')
+                .from('project')
+                .where('user.id = project.user_id')
+
+            test.equal q.sql(), 'SELECT * FROM user, project WHERE user.id = project.user_id'
+            test.deepEqual q.params(), []
+
+            test.done()
+
         'join': (test) ->
             q = mohair.table('user')
                 .join('JOIN project ON user.id = project.user_id')
