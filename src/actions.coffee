@@ -137,8 +137,12 @@ select =
             else
                 parts.push s
         sql += parts.join ', '
-        if mohair._table?
-            sql += " FROM #{table}"
+
+        parts = []
+        parts.push "#{table}" if mohair._table?
+        parts.push "#{mohair._from.sql()}" if mohair._from?
+        sql += " FROM " + parts.join ', ' if parts.length
+
         mohair._joins.forEach (join) ->
             sql += " #{join.sql}"
             sql += " AND (#{join.criterion.sql()})" if join.criterion?
@@ -166,6 +170,8 @@ select =
                     throw new Error 'select object must have at least one property'
                 keys.forEach (key) ->
                     params = params.concat asRaw(s[key]).params()
+
+        params = params.concat mohair._from.params() if mohair._from?
 
         mohair._joins.forEach (join) ->
             if join.criterion?
