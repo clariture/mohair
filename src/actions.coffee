@@ -144,7 +144,7 @@ select =
         sql += " FROM " + parts.join ', ' if parts.length
 
         mohair._joins.forEach (join) ->
-            sql += " #{join.sql}"
+            sql += " #{asRaw(join.sql).sql()}"
             sql += " AND (#{join.criterion.sql()})" if join.criterion?
         sql += " WHERE #{mohair._where.sql()}" if mohair._where?
         sql += " GROUP BY #{mohair._group}" if mohair._group?
@@ -174,6 +174,7 @@ select =
         params = params.concat mohair._from.params() if mohair._from?
 
         mohair._joins.forEach (join) ->
+            params = params.concat asRaw(join.sql).params()
             if join.criterion?
                 params = params.concat join.criterion.params()
 

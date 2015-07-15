@@ -555,6 +555,16 @@ module.exports =
 
             test.done()
 
+        'join with function': (test) ->
+            q = mohair.table('user')
+                .join((() -> @.raw 'JOIN project ON user.id = project.user_id AND user.id = ?', 5), 'project.foo = ?', 4)
+
+            test.equal q.sql(),
+                'SELECT * FROM user JOIN project ON user.id = project.user_id AND user.id = ? AND (project.foo = ?)'
+            test.deepEqual q.params(), [5, 4]
+
+            test.done()
+
         'multiple joins': (test) ->
             q = mohair.table('user')
                 .join('OUTER JOIN project ON user.id = project.user_id', 'project.foo = ?', 4)

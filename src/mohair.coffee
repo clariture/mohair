@@ -59,7 +59,7 @@ module.exports =
         @fluent '_action', actions.update updates
 
     join: (sql, criterionArgs...) ->
-        join = {sql: sql}
+        join = {sql: if 'function' is typeof sql then sql.call @ else sql }
         join.criterion = criterion criterionArgs... if criterionArgs.length isnt 0
 
         object = Object.create @
