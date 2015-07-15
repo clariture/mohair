@@ -2,6 +2,11 @@ criterion = require 'criterion'
 
 actions = require './actions'
 
+extend = (dest, src) ->
+    for key, val of src
+        dest[key] = val
+    dest
+
 rawPrototype =
     sql: ->
         return @_sql unless @_params
@@ -66,8 +71,13 @@ module.exports =
 
     with: (arg) ->
         unless ('object' is typeof arg) and Object.keys(arg).length isnt 0
-            throw new Error 'with must be called with an object that has at least one property'
-        @fluent '_with', arg
+            @fluent '_with', null
+        else
+            obj = if @_with? then extend {}, @_with else {}
+            for key, val of arg
+                extend obj, val._with if val._with?
+                obj[key] = if val.with? then val.with() else val
+            @fluent '_with', obj
     group: (arg) ->
         @fluent '_group', arg
     order: (sql, params...) ->
