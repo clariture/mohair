@@ -1,17 +1,4 @@
-isRaw = (x) ->
-    x? and ('object' is typeof x) and ('function' is typeof x.sql)
-
-asRaw = (x) ->
-    if isRaw x
-        return x
-
-    unless 'string' is typeof x
-        throw new Exception 'raw or string expected'
-
-    {
-        sql: -> x
-        params: -> []
-    }
+{isRaw, asRaw} = require './util'
 
 insertPrototype =
     sql: (mohair) ->
@@ -144,8 +131,7 @@ select =
         sql += " FROM " + parts.join ', ' if parts.length
 
         mohair._joins.forEach (join) ->
-            sql += " #{asRaw(join.sql).sql()}"
-            sql += " AND (#{join.criterion.sql()})" if join.criterion?
+            sql += " #{join.sql()}"
         sql += " WHERE #{mohair._where.sql()}" if mohair._where?
         sql += " GROUP BY #{mohair._group}" if mohair._group?
         sql += " HAVING #{mohair._having.sql()}" if mohair._having?
@@ -174,9 +160,7 @@ select =
         params = params.concat mohair._from.params() if mohair._from?
 
         mohair._joins.forEach (join) ->
-            params = params.concat asRaw(join.sql).params()
-            if join.criterion?
-                params = params.concat join.criterion.params()
+            params = params.concat join.params()
 
         params = params.concat mohair._where.params() if mohair._where?
         params = params.concat mohair._having.params() if mohair._having?

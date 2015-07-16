@@ -2,10 +2,7 @@ criterion = require 'criterion'
 
 actions = require './actions'
 
-extend = (dest, src) ->
-    for key, val of src
-        dest[key] = val
-    dest
+{isRaw, extend} = require './util'
 
 rawPrototype =
     sql: ->
@@ -18,13 +15,15 @@ rawPrototype =
             i++
             if Array.isArray params[i]
                 (params[i].map -> "?").join ", "
+            else if isRaw params[i]
+                params[i].sql()
             else
                 "?"
 
     params: ->
         if @_params
             params = []
-            @_params.forEach (c) -> params = params.concat c
+            @_params.forEach (c) -> params = params.concat if isRaw c then c.params() else c
             params
 
 module.exports =
@@ -58,16 +57,9 @@ module.exports =
     update: (updates) ->
         @fluent '_action', actions.update updates
 
-    join: (sql, criterionArgs...) ->
-        join = {sql: if 'function' is typeof sql then sql.call @ else sql }
-        join.criterion = criterion criterionArgs... if criterionArgs.length isnt 0
-
-        object = Object.create @
-        # slice without arguments clones an array
-        object._joins = @_joins.slice()
-        object._joins.push join
-
-        object
+    join: (sql, params...) ->
+        join = @raw sql, params...
+        @fluent '_joins', @_joins.concat join
 
     with: (arg) ->
         unless ('object' is typeof arg) and Object.keys(arg).length isnt 0

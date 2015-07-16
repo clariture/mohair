@@ -526,6 +526,30 @@ module.exports =
 
             test.done()
 
+        'from with subquery': (test) ->
+            subquery = mohair
+                .table('order')
+                .where('price > ?', 10)
+                .where('qty < ?', 25)
+                .select('count(1)')
+
+            q = mohair.table('user')
+                .from('project, (?) o', subquery)
+                .where('user.id = project.user_id')
+                .where(
+                    'project.foo': 4
+                    'project.bar': 'test'
+                )
+                .where('user.id = o.user_id')
+                .where(
+                    'user.status': 'active'
+                )
+
+            test.equal q.sql(), 'SELECT * FROM user, project, (SELECT count(1) FROM order WHERE (price > ?) AND (qty < ?)) o WHERE (((user.id = project.user_id) AND ((project.foo = ?) AND (project.bar = ?))) AND (user.id = o.user_id)) AND (user.status = ?)'
+            test.deepEqual q.params(), [ 10, 25, 4, 'test', 'active' ]
+
+            test.done()
+
         'join': (test) ->
             q = mohair.table('user')
                 .join('JOIN project ON user.id = project.user_id')
@@ -535,43 +559,43 @@ module.exports =
 
             test.done()
 
-        'join with object criterion': (test) ->
-            q = mohair.table('user')
-                .join('JOIN project ON user.id = project.user_id', {'project.foo': {$null: true}, 'project.bar': 10})
-
-            test.equal q.sql(),
-                'SELECT * FROM user JOIN project ON user.id = project.user_id AND ((project.foo IS NULL) AND (project.bar = ?))'
-            test.deepEqual q.params(), [10]
-
-            test.done()
-
         'join with sql criterion': (test) ->
             q = mohair.table('user')
-                .join('JOIN project ON user.id = project.user_id', 'project.foo = ?', 4)
+                .join('JOIN project ON user.id = project.user_id AND project.foo = ? AND project.bar = ?', 4, 'test')
 
             test.equal q.sql(),
-                'SELECT * FROM user JOIN project ON user.id = project.user_id AND (project.foo = ?)'
-            test.deepEqual q.params(), [4]
+                'SELECT * FROM user JOIN project ON user.id = project.user_id AND project.foo = ? AND project.bar = ?'
+            test.deepEqual q.params(), [4, 'test']
 
             test.done()
 
-        'join with function': (test) ->
+        'join with subquery': (test) ->
+            subquery = mohair
+                .table('order')
+                .where('price > ?', 10)
+                .where('qty < ?', 25)
+                .select('count(1)')
+
             q = mohair.table('user')
-                .join((() -> @.raw 'JOIN project ON user.id = project.user_id AND user.id = ?', 5), 'project.foo = ?', 4)
+                .join('JOIN project ON user.id = project.user_id AND project.foo = ? AND project.bar = ?', 4, 'test')
+                .join('JOIN (?) o ON user.id = o.user_id', subquery)
+                .where(
+                    'user.status': 'active'
+                )
 
             test.equal q.sql(),
-                'SELECT * FROM user JOIN project ON user.id = project.user_id AND user.id = ? AND (project.foo = ?)'
-            test.deepEqual q.params(), [5, 4]
+                'SELECT * FROM user JOIN project ON user.id = project.user_id AND project.foo = ? AND project.bar = ? JOIN (SELECT count(1) FROM order WHERE (price > ?) AND (qty < ?)) o ON user.id = o.user_id WHERE user.status = ?'
+            test.deepEqual q.params(), [4, 'test', 10, 25, 'active']
 
             test.done()
 
         'multiple joins': (test) ->
             q = mohair.table('user')
-                .join('OUTER JOIN project ON user.id = project.user_id', 'project.foo = ?', 4)
-                .join('INNER JOIN task ON project.id = task.project_id', {'task.bar': 10})
+                .join('OUTER JOIN project ON user.id = project.user_id AND project.foo = ?', 4)
+                .join('INNER JOIN task ON project.id = task.project_id AND task.bar = ?', 10)
 
             test.equal q.sql(),
-                'SELECT * FROM user OUTER JOIN project ON user.id = project.user_id AND (project.foo = ?) INNER JOIN task ON project.id = task.project_id AND (task.bar = ?)'
+                'SELECT * FROM user OUTER JOIN project ON user.id = project.user_id AND project.foo = ? INNER JOIN task ON project.id = task.project_id AND task.bar = ?'
             test.deepEqual q.params(), [4, 10]
 
             test.done()
