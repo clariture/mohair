@@ -255,6 +255,28 @@ module.exports =
 
             test.done()
 
+        'with common table expressions and USING': (test) ->
+            purchasesByUser = mohair
+                .select('user_id, SUM(amount) AS amount')
+                .table('orders')
+                .group('user_id')
+                .having('amount < 1000')
+
+            q = mohair
+                .with(
+                    purch: purchasesByUser
+                )
+                .table('user')
+                .using('purch')
+                .delete()
+                .where('id = purch.id')
+                .where('x BETWEEN ? AND ?', 50, 55)
+
+            test.equal q.sql(), 'WITH purch AS (SELECT user_id, SUM(amount) AS amount FROM orders GROUP BY user_id HAVING amount < 1000) DELETE FROM user USING purch WHERE (id = purch.id) AND (x BETWEEN ? AND ?)'
+            test.deepEqual q.params(), [50, 55]
+
+            test.done()
+
     'update':
 
         'without criteria': (test) ->
@@ -647,6 +669,27 @@ module.exports =
         query = mohair.table('posts')
             .mixin(paginate, 10, 100)
             .where(is_public: true)
+
+        test.equal query.sql(), 'SELECT * FROM posts WHERE is_public = ? LIMIT ? OFFSET ?'
+        test.deepEqual query.params(), [true, 100, 1000]
+
+        test.done()
+
+    'tap': (test) ->
+        test.expect 4
+
+        paginate = (page, perPage) ->
+            this.limit(perPage)
+                .offset(page * perPage)
+
+        callViaTap = (arg1, arg2) ->
+            test.equal arg1, 2
+            test.equal arg2, 4
+
+        query = mohair.table('posts')
+            .mixin(paginate, 10, 100)
+            .where(is_public: true)
+            .tap(callViaTap, 2, 4)
 
         test.equal query.sql(), 'SELECT * FROM posts WHERE is_public = ? LIMIT ? OFFSET ?'
         test.deepEqual query.params(), [true, 100, 1000]

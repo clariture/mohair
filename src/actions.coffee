@@ -267,6 +267,7 @@ deletePrototype =
             sql += ' '
 
         sql += "DELETE FROM #{table}"
+        sql += " USING #{mohair._using.sql()}" if mohair._using?
         sql += " WHERE #{mohair._where.sql()}" if mohair._where?
         sql
     params: (mohair) ->
@@ -276,6 +277,7 @@ deletePrototype =
             Object.keys(mohair._with).forEach (key) ->
                 params = params.concat asRaw(mohair._with[key]).params()
 
+        params = params.concat mohair._using.params() if mohair._using?
         params = params.concat mohair._where.params() if mohair._where?
         params
 

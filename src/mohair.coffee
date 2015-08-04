@@ -100,10 +100,17 @@ module.exports =
         unless m
             throw new Error 'mixin must be called with a function that returns a value'
         m
+    tap: (fn, args...) ->
+        fn.apply @, args
+        @
 
     from: (sql, params...) ->
         from = @raw sql, params...
         @fluent '_from', from
+
+    using: (sql, params...) ->
+        using = @raw sql, params...
+        @fluent '_using', using
 
     sql: ->
         @_action.sql @
