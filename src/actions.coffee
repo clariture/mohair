@@ -91,7 +91,7 @@ module.exports.insert = (data) ->
     object._data = processedData
     object
 
-select =
+selectPrototype =
     sql: (mohair) ->
         that = this
         table = mohair._escape mohair._table
@@ -107,23 +107,7 @@ select =
 
         sql += "SELECT "
         sql += "DISTINCT " if mohair._distinct?
-        parts = []
-        that._selects.forEach (s) ->
-            if isRaw s
-                parts.push '(' + s.sql() + ')'
-            else if 'object' is typeof s
-                keys = Object.keys s
-                if keys.length is 0
-                    throw new Error 'select object must have at least one property'
-                keys.forEach (key) ->
-                    value = s[key]
-                    if isRaw value
-                        parts.push '(' + value.sql() + ') AS ' + key
-                    else
-                        parts.push value + ' AS ' + key
-            else
-                parts.push s
-        sql += parts.join ', '
+        sql += that._select.sql()
 
         parts = []
         parts.push "#{table}" if mohair._table?
@@ -147,15 +131,7 @@ select =
             Object.keys(mohair._with).forEach (key) ->
                 params = params.concat asRaw(mohair._with[key]).params()
 
-        that._selects.forEach (s) ->
-            if isRaw s
-                params = params.concat s.params()
-            else if 'object' is typeof s
-                keys = Object.keys s
-                if keys.length is 0
-                    throw new Error 'select object must have at least one property'
-                keys.forEach (key) ->
-                    params = params.concat asRaw(s[key]).params()
+        params = params.concat that._select.params()
 
         params = params.concat mohair._from.params() if mohair._from?
 
@@ -169,12 +145,9 @@ select =
         params.push mohair._offset if mohair._offset?
         params
 
-module.exports.select = ->
-    selects = Array.prototype.slice.call arguments
-    object = Object.create select
-    if selects.length is 0
-        selects = ['*']
-    object._selects = selects
+module.exports.select = (select) ->
+    object = Object.create selectPrototype
+    object._select = select
     object
 
 updatePrototype =

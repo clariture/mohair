@@ -425,32 +425,16 @@ module.exports =
 
             test.done()
 
-        'specific fields provided individually': (test) ->
-            q = mohair.table('user').select('name', 'timestamp AS created_at')
-
-            test.equal q.sql(), 'SELECT name, timestamp AS created_at FROM user'
-            test.deepEqual q.params(), []
-
-            test.done()
-
-        'with object': (test) ->
-            q = mohair.table('user').select('name', {created_at: 'timestamp'})
-
-            test.equal q.sql(), 'SELECT name, timestamp AS created_at FROM user'
-            test.deepEqual q.params(), []
-
-            test.done()
-
         'with raw': (test) ->
-            q = mohair.table('user').select('name', mohair.raw('count/?', 10))
+            q = mohair.table('user').select('name, (count/?)', 10)
 
             test.equal q.sql(), 'SELECT name, (count/?) FROM user'
             test.deepEqual q.params(), [10]
 
             test.done()
 
-        'with raw and object': (test) ->
-            q = mohair.table('user').select('name', {number: mohair.raw('count/?', 10)})
+        'with raw and alias': (test) ->
+            q = mohair.table('user').select('name, (count/?) AS number', 10)
 
             test.equal q.sql(), 'SELECT name, (count/?) AS number FROM user'
             test.deepEqual q.params(), [10]
@@ -465,9 +449,24 @@ module.exports =
                 .select('count(1)')
             q = mohair
                 .table('user')
-                .select('name', {order_count: subquery})
+                .select('name, (?) AS order_count', subquery)
 
             test.equal q.sql(), 'SELECT name, (SELECT count(1) FROM order WHERE (user_id = user.id) AND (price > ?)) AS order_count FROM user'
+            test.deepEqual q.params(), [10]
+
+            test.done()
+
+        'with subquery and exists': (test) ->
+            subquery = mohair
+                .table('order')
+                .where('user_id = user.id')
+                .where('price > ?', 10)
+                .select('count(1)')
+            q = mohair
+                .table('user')
+                .select('name, EXISTS (?) AS has_orders', subquery)
+
+            test.equal q.sql(), 'SELECT name, EXISTS (SELECT count(1) FROM order WHERE (user_id = user.id) AND (price > ?)) AS has_orders FROM user'
             test.deepEqual q.params(), [10]
 
             test.done()
@@ -816,7 +815,7 @@ module.exports =
                 .where('region IN (SELECT region FROM top_regions)')
                 .group('region, product')
 
-            expected = "WITH regional_sales AS (SELECT region, SUM(amount) AS total_sales FROM orders GROUP BY region), top_regions AS (SELECT region FROM regional_sales WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)) SELECT region, product, SUM(quantity) AS product_units, SUM(amount) AS product_sales FROM orders WHERE region IN (SELECT region FROM top_regions) GROUP BY region, product"
+            expected = "WITH top_regions AS (WITH regional_sales AS (SELECT region, SUM(amount) AS total_sales FROM orders GROUP BY region) SELECT region FROM regional_sales WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)) SELECT region, product, SUM(quantity) AS product_units, SUM(amount) AS product_sales FROM orders WHERE region IN (SELECT region FROM top_regions) GROUP BY region, product"
 
             test.equals query.sql(), expected
             test.deepEqual query.params(), []
@@ -908,7 +907,7 @@ module.exports =
                 .table('order_stats')
                 .insert(ordersByRegion)
 
-            expected = "WITH regional_sales AS (SELECT region, SUM(amount) AS total_sales FROM orders GROUP BY region), top_regions AS (SELECT region FROM regional_sales WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)) INSERT INTO order_stats(region_name, product_name, product_units, product_sales) SELECT region, product, SUM(quantity) AS product_units, SUM(amount) AS product_sales FROM orders WHERE region IN (SELECT region FROM top_regions) GROUP BY region, product"
+            expected = "WITH top_regions AS (WITH regional_sales AS (SELECT region, SUM(amount) AS total_sales FROM orders GROUP BY region) SELECT region FROM regional_sales WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)) INSERT INTO order_stats(region_name, product_name, product_units, product_sales) SELECT region, product, SUM(quantity) AS product_units, SUM(amount) AS product_sales FROM orders WHERE region IN (SELECT region FROM top_regions) GROUP BY region, product"
 
             test.equals query.sql(), expected
             test.deepEqual query.params(), []

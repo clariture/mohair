@@ -2,7 +2,7 @@ criterion = require 'criterion'
 
 actions = require './actions'
 
-{isRaw, extend} = require './util'
+{isRaw, asRaw, extend} = require './util'
 
 rawPrototype =
     sql: ->
@@ -39,7 +39,7 @@ module.exports =
         object
 
     _escape: (string) -> string
-    _action: actions.select '*'
+    _action: actions.select asRaw('*')
     _joins: []
 
     insert: (data) ->
@@ -48,8 +48,9 @@ module.exports =
     escape: (arg) ->
         @fluent '_escape', arg
 
-    select: ->
-        @fluent '_action', actions.select.apply null, arguments
+    select: (sql, params...) ->
+        select = if sql? then @raw(sql, params...) else @raw('*')
+        @fluent '_action', actions.select select
 
     delete: ->
         @fluent '_action', actions.delete()

@@ -225,26 +225,11 @@ query.params();     // => []
 ```
 
 ```javascript
-var query = userTable.select('name', 'timestamp AS created_at');
-
-query.sql();        // => 'SELECT name, timestamp AS created_at FROM user'
-query.params();     // => []
-```
-
-```javascript
-var query = userTable.select('name', {created_at: 'timestamp'});
-
-query.sql();        // => 'SELECT name, timestamp AS created_at FROM user'
-query.params();     // => []
-```
-
-```javascript
-var fragment = mohair.raw('SUM(total_sales/?)', 10);
 var query = mohair
     .table('regional_sales')
-    .select('region', {summed_sales: fragment});
+    .select('region, SUM(total_sales/?) AS summed_sales', 10);
 
-query.sql();        // => 'SELECT region, (SUM(total_sales/?)) AS summed_sales FROM regional_sales'
+query.sql();        // => 'SELECT region, SUM(total_sales/?) AS summed_sales FROM regional_sales'
 query.params();     // => [10]
 ```
 
@@ -255,9 +240,22 @@ var subquery = mohair
     .table('order')
     .where('user_id = user.id')
     .select('count(1)');
-var query = userTable.select('name', {order_count: subquery});
+var query = userTable.select('name, (?) AS order_count', subquery);
 
 query.sql();        // => 'SELECT name, (SELECT count(1) FROM order WHERE user_id = user.id) AS order_count FROM user'
+query.params();     // => []
+```
+
+##### select with subquery and exists
+
+```javascript
+var subquery = mohair
+    .table('order')
+    .where('user_id = user.id')
+    .select('count(1)');
+var query = userTable.select('name, EXISTS (?) AS has_orders', subquery);
+
+query.sql();        // => 'SELECT name, EXISTS (SELECT count(1) FROM order WHERE user_id = user.id) AS has_orders FROM user'
 query.params();     // => []
 ```
 
