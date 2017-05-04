@@ -11,7 +11,7 @@ rawPrototype =
         i = -1
         params = @_params
 
-        @_sql.replace /\?/g, ->
+        @_sql.replace /^\?|[^\\]\?/g, ->
             i++
             if Array.isArray params[i]
                 (params[i].map -> "?").join ", "
