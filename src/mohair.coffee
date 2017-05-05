@@ -11,14 +11,18 @@ rawPrototype =
         i = -1
         params = @_params
 
-        @_sql.replace /^\?|[^\\]\?/g, ->
-            i++
-            if Array.isArray params[i]
-                (params[i].map -> "?").join ", "
-            else if isRaw params[i]
-                params[i].sql()
-            else
-                "?"
+        @_sql
+        .split /\\\?/
+        .map (s) ->
+            s.replace /\?/g, ->
+                i++
+                if Array.isArray params[i]
+                    (params[i].map -> "?").join ", "
+                else if isRaw params[i]
+                    params[i].sql()
+                else
+                    "?"
+        .join "\\?"
 
     params: ->
         if @_params
