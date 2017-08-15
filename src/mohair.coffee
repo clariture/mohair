@@ -12,7 +12,7 @@ rawPrototype =
         params = @_params
 
         @_sql
-        .split /\\\?/
+        .split(/\\\?/)
         .map (s) ->
             s.replace /\?/g, ->
                 i++
