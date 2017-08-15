@@ -117,7 +117,7 @@ selectPrototype =
         mohair._joins.forEach (join) ->
             sql += " #{join.sql()}"
         sql += " WHERE #{mohair._where.sql()}" if mohair._where?
-        sql += " GROUP BY #{mohair._group}" if mohair._group?
+        sql += " GROUP BY #{mohair._group.sql()}" if mohair._group?
         sql += " HAVING #{mohair._having.sql()}" if mohair._having?
         sql += " ORDER BY #{mohair._order.sql()}" if mohair._order?
         sql += " LIMIT ?" if mohair._limit?
@@ -139,6 +139,7 @@ selectPrototype =
             params = params.concat join.params()
 
         params = params.concat mohair._where.params() if mohair._where?
+        params = params.concat mohair._group.params() if mohair._group?
         params = params.concat mohair._having.params() if mohair._having?
         params = params.concat mohair._order.params() if mohair._order?
         params.push mohair._limit if mohair._limit?

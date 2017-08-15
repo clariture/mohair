@@ -633,13 +633,13 @@ module.exports =
 
         'group': (test) ->
             q = mohair.table('user')
-                .select('user.*, count(project.id) AS project_count')
+                .select('user.id, user.attrs->>?, count(project.id) AS project_count', 'businessUnit')
                 .join('JOIN project ON user.id = project.user_id')
-                .group('user.id')
+                .group('user.id, user.attrs->>?', 'businessUnit')
                 .having('project_count > ?', 2)
 
-            test.equal q.sql(), 'SELECT user.*, count(project.id) AS project_count FROM user JOIN project ON user.id = project.user_id GROUP BY user.id HAVING project_count > ?'
-            test.deepEqual q.params(), [2]
+            test.equal q.sql(), 'SELECT user.id, user.attrs->>?, count(project.id) AS project_count FROM user JOIN project ON user.id = project.user_id GROUP BY user.id, user.attrs->>? HAVING project_count > ?'
+            test.deepEqual q.params(), ['businessUnit', 'businessUnit', 2]
 
             test.done()
 

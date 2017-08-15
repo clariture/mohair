@@ -70,8 +70,9 @@ module.exports =
         unless ('object' is typeof arg) and Object.keys(arg).length isnt 0
             throw new Error 'with must be called with an object that has at least one property'
         @fluent '_with', arg
-    group: (arg) ->
-        @fluent '_group', arg
+    group: (sql, params...) ->
+        group = @raw sql, params...
+        @fluent '_group', group
     order: (sql, params...) ->
         order = @raw sql, params...
         @fluent '_order', order
