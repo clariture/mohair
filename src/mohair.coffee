@@ -12,7 +12,7 @@ rawPrototype =
         params = @_params
 
         @_sql
-        .split(/\\\?/)
+        .split(/\?{2,}/g)
         .map (s) ->
             s.replace /\?/g, ->
                 i++
@@ -22,7 +22,7 @@ rawPrototype =
                     params[i].sql()
                 else
                     "?"
-        .join "\\?"
+        .join "??"
 
     params: ->
         if @_params
